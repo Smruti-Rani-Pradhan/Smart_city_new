@@ -1,0 +1,47 @@
+from datetime import datetime, timedelta
+from fastapi import Depends, HTTPException, status
+from fastapi.security import OAuth2PasswordBearer
+from jose import jwt, JWTError
+from passlib.context import CryptContext
+from app.config.settings import settings
+from app.database import users
+from app.utils import serialize_doc
+
+pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/auth/login")
+
+def hash_password(password):
+    return pwd_context.hash(password)
+
+def verify_password(password, hashed):
+    return pwd_context.verify(password, hashed)
+
+def create_token(data: dict, expires_minutes: int | None = None):
+    expires = datetime.utcnow() + timedelta(minutes=expires_minutes or settings.ACCESS_TOKEN_EXPIRE_MINUTES)
+    payload = dict(data)
+    payload["exp"] = expires
+    return jwt.encode(payload, settings.SECRET_KEY, algorithm=settings.ALGORITHM)
+
+def decode_token(token: str) -> dict:
+    try:
+        return jwt.decode(token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM])
+    except JWTError:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token")
+
+def get_current_user(token: str = Depends(oauth2_scheme)):
+    payload = decode_token(token)
+    user_id = payload.get("sub")
+    email = payload.get("email")
+    query = {"_id": user_id} if user_id else {"email": email}
+    if user_id:
+        from bson import ObjectId
+        query = {"_id": ObjectId(user_id)}
+    db_user = users.find_one(query)
+    if not db_user:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="User not found")
+    return serialize_doc(db_user)
+
+def get_official_user(current_user: dict = Depends(get_current_user)):
+    if current_user.get("userType") != "official":
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Official access required")
+    return current_user
