@@ -6,6 +6,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { RouteGuard } from "./components/auth/RouteGuard";
 import Index from "./pages/Index";
 import Login from "./pages/Login";
+import DemoLogin from "./pages/DemoLogin";
 import OfficialLogin from "./pages/OfficialLogin";
 import Register from "./pages/Register";
 import ForgotPassword from "./pages/ForgotPassword";
@@ -28,6 +29,7 @@ const App = () => (
       <BrowserRouter>
         <Routes>
           <Route path="/" element={<Index />} />
+          <Route path="/demo" element={<DemoLogin />} />
           <Route path="/login" element={<Login />} />
           <Route path="/official/login" element={<OfficialLogin />} />
           <Route path="/register" element={<Register />} />

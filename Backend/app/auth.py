@@ -32,11 +32,24 @@ def get_current_user(token: str = Depends(oauth2_scheme)):
     payload = decode_token(token)
     user_id = payload.get("sub")
     email = payload.get("email")
-    query = {"_id": user_id} if user_id else {"email": email}
+    
+    db_user = None
     if user_id:
-        from bson import ObjectId
-        query = {"_id": ObjectId(user_id)}
-    db_user = users.find_one(query)
+        # Try to find user by string ID first (for seeded users)
+        db_user = users.find_one({"_id": user_id})
+        
+        # If not found, try to find by ObjectId (for registered users)
+        if not db_user:
+            try:
+                from bson import ObjectId
+                db_user = users.find_one({"_id": ObjectId(user_id)})
+            except Exception:
+                pass
+    
+    # If still not found, try by email
+    if not db_user and email:
+        db_user = users.find_one({"email": email})
+    
     if not db_user:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="User not found")
     return serialize_doc(db_user)

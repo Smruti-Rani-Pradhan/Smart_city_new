@@ -1,28 +1,92 @@
-import { useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { OfficialDashboardLayout } from '@/components/layout/OfficialDashboardLayout';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Download, Filter } from 'lucide-react';
+import { Download, Filter, RefreshCw } from 'lucide-react';
+import { incidentService, Incident } from '@/services/incidents';
+import { cn } from '@/lib/utils';
 
-// Mock Data for Reports
-const REPORT_DATA = [
-  { id: 'INC-001', date: '2024-02-10', type: 'Pothole', zone: 'North', status: 'Resolved', assignee: 'Team A' },
-  { id: 'INC-002', date: '2024-02-11', type: 'Garbage', zone: 'South', status: 'Pending', assignee: 'Unassigned' },
-  { id: 'INC-003', date: '2024-02-11', type: 'Water', zone: 'East', status: 'In Progress', assignee: 'Team B' },
-  { id: 'INC-004', date: '2024-02-12', type: 'Electricity', zone: 'West', status: 'Resolved', assignee: 'Team C' },
-  { id: 'INC-005', date: '2024-02-12', type: 'Pothole', zone: 'North', status: 'In Progress', assignee: 'Team A' },
-];
+const STATUS_STYLES: Record<string, string> = {
+  resolved: 'bg-green-100 text-green-800 border-green-200',
+  open: 'bg-red-100 text-red-800 border-red-200',
+  in_progress: 'bg-yellow-100 text-yellow-800 border-yellow-200',
+  verified: 'bg-blue-100 text-blue-800 border-blue-200',
+};
+
+const PRIORITY_COLORS: Record<string, string> = {
+  critical: 'text-red-600',
+  high: 'text-orange-600',
+  medium: 'text-yellow-600',
+  low: 'text-slate-500',
+};
 
 export default function Reports() {
-  const [reports] = useState(REPORT_DATA);
+  const [reports, setReports] = useState<Incident[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const fetchReports = async () => {
+    setLoading(true);
+    setError(null);
+    const response = await incidentService.getIncidents();
+    if (response.success && response.data) {
+      setReports(response.data);
+    } else {
+      setError(response.error || 'Unable to load citizen reports');
+    }
+    setLoading(false);
+  };
+
+  useEffect(() => {
+    fetchReports();
+  }, []);
+
+  const summary = useMemo(() => {
+    return reports.reduce(
+      (acc, incident) => {
+        acc.total += 1;
+        acc.byStatus[incident.status] = (acc.byStatus[incident.status] || 0) + 1;
+        return acc;
+      },
+      { total: 0, byStatus: {} as Record<string, number> }
+    );
+  }, [reports]);
 
   const downloadCSV = () => {
-    const headers = ["ID", "Date", "Type", "Zone", "Status", "Assignee"];
+    if (!reports.length) return;
+    const headers = [
+      'Incident ID',
+      'Title',
+      'Category',
+      'Status',
+      'Priority',
+      'Reported By',
+      'Reporter Email',
+      'Reporter Phone',
+      'Location',
+      'Created At',
+    ];
+
     const csvContent = [
-      headers.join(","),
-      ...reports.map(r => Object.values(r).join(","))
-    ].join("\n");
+      headers.join(','),
+      ...reports.map((incident) => (
+        [
+          incident.id,
+          incident.title,
+          incident.category,
+          incident.status,
+          incident.priority,
+          incident.reportedBy,
+          incident.reporterEmail,
+          incident.reporterPhone,
+          incident.location,
+          incident.createdAt,
+        ]
+          .map((value) => `"${(value ?? '').toString().replace(/"/g, '""')}"`)
+          .join(',')
+      )),
+    ].join('\n');
 
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const link = document.createElement("a");
@@ -38,58 +102,123 @@ export default function Reports() {
   return (
     <OfficialDashboardLayout>
       <div className="space-y-6 animate-fade-in">
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
           <div>
             <h1 className="text-3xl font-bold tracking-tight">Reports & Logs</h1>
-            <p className="text-muted-foreground">Generate and export detailed incident reports.</p>
+            <p className="text-muted-foreground">Live feed of incidents reported by citizens.</p>
           </div>
-          <div className="flex gap-2">
+          <div className="flex flex-wrap gap-2">
+            <Button variant="outline" onClick={fetchReports} disabled={loading}>
+              <RefreshCw className={cn('mr-2 h-4 w-4', loading && 'animate-spin')} /> Refresh
+            </Button>
             <Button variant="outline">
               <Filter className="mr-2 h-4 w-4" /> Filter
             </Button>
-            <Button onClick={downloadCSV}>
+            <Button onClick={downloadCSV} disabled={!reports.length}>
               <Download className="mr-2 h-4 w-4" /> Export CSV
             </Button>
           </div>
         </div>
+
+        <Card className="border-dashed">
+          <CardContent className="py-6">
+            <div className="grid gap-4 sm:grid-cols-3">
+              <div>
+                <p className="text-sm text-muted-foreground">Total Reports</p>
+                <p className="text-3xl font-bold">{summary.total}</p>
+              </div>
+              <div>
+                <p className="text-sm text-muted-foreground">Open</p>
+                <p className="text-2xl font-semibold">{summary.byStatus['open'] || 0}</p>
+              </div>
+              <div>
+                <p className="text-sm text-muted-foreground">In Progress</p>
+                <p className="text-2xl font-semibold">{summary.byStatus['in_progress'] || 0}</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
 
         <Card>
           <CardHeader>
             <CardTitle>Incident Log</CardTitle>
           </CardHeader>
           <CardContent>
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>ID</TableHead>
-                  <TableHead>Date</TableHead>
-                  <TableHead>Type</TableHead>
-                  <TableHead>Zone</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Assignee</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {reports.map((report) => (
-                  <TableRow key={report.id}>
-                    <TableCell className="font-medium">{report.id}</TableCell>
-                    <TableCell>{report.date}</TableCell>
-                    <TableCell>{report.type}</TableCell>
-                    <TableCell>{report.zone}</TableCell>
-                    <TableCell>
-                      <span className={`px-2 py-1 rounded-full text-xs border ${
-                        report.status === 'Resolved' ? 'bg-green-100 text-green-800 border-green-200' :
-                        report.status === 'Pending' ? 'bg-red-100 text-red-800 border-red-200' :
-                        'bg-yellow-100 text-yellow-800 border-yellow-200'
-                      }`}>
-                        {report.status}
-                      </span>
-                    </TableCell>
-                    <TableCell>{report.assignee}</TableCell>
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Incident</TableHead>
+                    <TableHead>Citizen</TableHead>
+                    <TableHead>Category</TableHead>
+                    <TableHead>Priority</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead>Location</TableHead>
+                    <TableHead>Reported On</TableHead>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+                </TableHeader>
+                <TableBody>
+                  {loading && (
+                    <TableRow>
+                      <TableCell colSpan={7} className="text-center text-muted-foreground">
+                        Loading citizen reports...
+                      </TableCell>
+                    </TableRow>
+                  )}
+
+                  {!loading && error && (
+                    <TableRow>
+                      <TableCell colSpan={7} className="text-center text-destructive">
+                        {error}
+                      </TableCell>
+                    </TableRow>
+                  )}
+
+                  {!loading && !error && !reports.length && (
+                    <TableRow>
+                      <TableCell colSpan={7} className="text-center text-muted-foreground">
+                        No citizen reports have been submitted yet.
+                      </TableCell>
+                    </TableRow>
+                  )}
+
+                  {!loading && !error && reports.map((incident) => (
+                    <TableRow key={incident.id}>
+                      <TableCell className="font-medium">
+                        <div className="flex flex-col">
+                          <span>{incident.title}</span>
+                          <span className="text-xs text-muted-foreground">#{incident.id}</span>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex flex-col">
+                          <span className="font-medium">{incident.reportedBy || 'Unknown'}</span>
+                          <span className="text-xs text-muted-foreground">{incident.reporterEmail || incident.reporterPhone || 'N/A'}</span>
+                        </div>
+                      </TableCell>
+                      <TableCell>{incident.category}</TableCell>
+                      <TableCell>
+                        <span className={cn('text-sm font-medium', PRIORITY_COLORS[incident.priority || ''] || 'text-slate-500')}>
+                          {incident.priority ? incident.priority.toUpperCase() : 'N/A'}
+                        </span>
+                      </TableCell>
+                      <TableCell>
+                        <span className={cn(
+                          'px-2 py-1 rounded-full text-xs border capitalize',
+                          STATUS_STYLES[incident.status] || 'bg-slate-100 text-slate-700 border-slate-200'
+                        )}>
+                          {incident.status.replace('_', ' ')}
+                        </span>
+                      </TableCell>
+                      <TableCell>{incident.location || 'N/A'}</TableCell>
+                      <TableCell>
+                        {incident.createdAt ? new Date(incident.createdAt).toLocaleString() : 'N/A'}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
           </CardContent>
         </Card>
       </div>

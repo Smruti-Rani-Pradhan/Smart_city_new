@@ -29,13 +29,13 @@ interface OfficialDashboardLayoutProps {
 
 
 const navItems = [
-  { icon: Home, label: 'Overview', path: '/official-dashboard' },
+  { icon: Home, label: 'Overview', path: '/official/dashboard' },
   { icon: MapPin, label: 'Live Map', path: '/official/map' },
   { icon: BarChart3, label: 'Analytics', path: '/official/analytics' }, 
   { icon: FileText, label: 'Reports', path: '/official/reports' },      
   { icon: ClipboardList, label: 'All Tickets', path: '/official/tickets' },
   { icon: Users, label: 'Personnel', path: '/official/personnel' },
-  { icon: Bell, label: 'Alerts', path: '/officia/alerts' },
+  { icon: Bell, label: 'Alerts', path: '/official/alerts' },
 ];
 
 export const OfficialDashboardLayout = ({ children, onSettingsClick }: OfficialDashboardLayoutProps) => {
@@ -73,7 +73,7 @@ export const OfficialDashboardLayout = ({ children, onSettingsClick }: OfficialD
           <Menu className="h-6 w-6" />
         </button>
         
-        <Link to="/official-dashboard" className="flex items-center gap-2 mx-auto text-white">
+        <Link to="/official/dashboard" className="flex items-center gap-2 mx-auto text-white">
           <div className="p-1.5 rounded-lg bg-white/10">
             <Shield className="h-5 w-5" />
           </div>
@@ -102,7 +102,7 @@ export const OfficialDashboardLayout = ({ children, onSettingsClick }: OfficialD
       )}>
         <div className="flex flex-col h-full">
           <div className="p-4 flex items-center justify-between border-b border-white/10">
-            <Link to="/official-dashboard" className="flex items-center gap-2">
+            <Link to="/official/dashboard" className="flex items-center gap-2">
               <div className="p-2 rounded-xl bg-white/10">
                 <Shield className="h-6 w-6" />
               </div>

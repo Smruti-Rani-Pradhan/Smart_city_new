@@ -15,6 +15,9 @@ export interface Incident {
   imageUrls?: string[];
   imageUrl?: string;
   reportedBy?: string;
+  reporterId?: string;
+  reporterEmail?: string;
+  reporterPhone?: string;
   assignedTo?: string;
   ticketId?: string;
   severity?: string;
