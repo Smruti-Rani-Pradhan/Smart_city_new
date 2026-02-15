@@ -8,6 +8,12 @@ export default defineConfig({
   server: {
     host: "::",
     port: 8080,
+    allowedHosts: [
+      '.trycloudflare.com',
+      '.loca.lt',
+      '.ngrok-free.app',
+      'localhost',
+    ],
     hmr: {
       overlay: false,
     },
