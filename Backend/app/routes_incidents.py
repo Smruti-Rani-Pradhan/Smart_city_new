@@ -1,12 +1,12 @@
 import os
 import logging
 from datetime import datetime
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException
 from app.database import incidents, messages, tickets
 from app.models import IncidentCreate, IncidentUpdate, MessageCreate
 from app.services.ws_manager import manager
 from app.services.image_service import save_image
-from app.services.email_service import send_alert_email
+from app.services.email_service import send_alert_email, send_incident_submission_email
 from app.services.notification_service import send_stakeholder_notifications
 from app.issue_model import IssueIn
 from app.auth import get_current_user, get_official_user
@@ -64,6 +64,30 @@ def _notify_new_issue(description: str, lat: float | None, lon: float | None):
         send_stakeholder_notifications(text)
     except Exception as exc:
         LOGGER.warning("Stakeholder notification failed: %s", exc)
+
+def _send_incident_submission_email_safe(
+    to_email: str,
+    incident_id: str,
+    title: str,
+    category: str,
+    priority: str | None,
+    status: str,
+    location: str,
+    created_at: str,
+):
+    try:
+        send_incident_submission_email(
+            to_email=to_email,
+            incident_id=incident_id,
+            title=title,
+            category=category,
+            priority=priority,
+            status=status,
+            location=location,
+            created_at=created_at,
+        )
+    except Exception as exc:
+        LOGGER.warning("Incident submission email delivery failed for %s: %s", to_email, exc)
 
 def _create_ticket_from_incident(doc: dict):
     if not doc:
@@ -128,7 +152,11 @@ def get_incident(incident_id: str, current_user: dict = Depends(get_current_user
 
 @router.post("/incidents")
 @router.post("/issues")
-async def create_incident(incident: IncidentCreate, current_user: dict = Depends(get_current_user)):
+async def create_incident(
+    incident: IncidentCreate,
+    background_tasks: BackgroundTasks,
+    current_user: dict = Depends(get_current_user),
+):
     data = incident.dict()
     images = data.pop("images", None)
     image_urls = _save_images(images)
@@ -154,6 +182,19 @@ async def create_incident(incident: IncidentCreate, current_user: dict = Depends
         incidents.update_one({"_id": result.inserted_id}, {"$set": {"ticketId": str(ticket_id)}})
         doc = incidents.find_one({"_id": result.inserted_id})
     payload = serialize_doc(doc)
+    reporter_email = payload.get("reporterEmail")
+    if reporter_email and not _is_official(current_user):
+        background_tasks.add_task(
+            _send_incident_submission_email_safe,
+            reporter_email,
+            payload.get("id") or "",
+            payload.get("title") or "",
+            payload.get("category") or "",
+            payload.get("priority"),
+            payload.get("status") or "open",
+            payload.get("location") or "",
+            payload.get("createdAt") or now,
+        )
     _notify_new_issue(payload.get("description", ""), payload.get("latitude"), payload.get("longitude"))
     await manager.broadcast({
         "type": "NEW_INCIDENT",

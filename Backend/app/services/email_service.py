@@ -245,6 +245,42 @@ def send_registration_email(to_email: str, name: str, user_type: str) -> EmailDe
     return send_email(subject=subject, to_email=to_email, text_body=text_body, html_body=html_body)
 
 
+def send_incident_submission_email(
+    to_email: str,
+    incident_id: str,
+    title: str,
+    category: str,
+    priority: str | None,
+    status: str,
+    location: str,
+    created_at: str,
+) -> EmailDeliveryResult:
+    subject = "SafeLive Incident Submitted"
+    intro = "Your incident report was submitted successfully."
+    details = [
+        ("Incident ID", incident_id or "N/A"),
+        ("Title", title or "N/A"),
+        ("Category", category or "N/A"),
+        ("Priority", (priority or "N/A").upper() if priority else "N/A"),
+        ("Status", (status or "open").replace("_", " ")),
+        ("Location", location or "N/A"),
+        ("Submitted At", created_at or "N/A"),
+    ]
+    text_body = (
+        "Your incident report has been submitted successfully.\n\n"
+        f"Incident ID: {details[0][1]}\n"
+        f"Title: {details[1][1]}\n"
+        f"Category: {details[2][1]}\n"
+        f"Priority: {details[3][1]}\n"
+        f"Status: {details[4][1]}\n"
+        f"Location: {details[5][1]}\n"
+        f"Submitted At: {details[6][1]}\n\n"
+        "Keep this Incident ID for future tracking."
+    )
+    html_body = _render_email_frame(title=subject, intro=intro, details=details)
+    return send_email(subject=subject, to_email=to_email, text_body=text_body, html_body=html_body)
+
+
 def send_ticket_update_email(to_email: str, title: str, status: str) -> EmailDeliveryResult:
     subject = "SafeLive Ticket Update"
     intro = "Your ticket status has changed."
