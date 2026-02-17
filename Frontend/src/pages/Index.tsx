@@ -74,17 +74,6 @@ const Index = () => {
     },
   ];
 
-  const total = summary?.total || 0;
-  const resolved = summary?.resolved || 0;
-  const resolutionRate = total > 0 ? `${Math.round((resolved / total) * 100)}%` : '0%';
-
-  const stats = [
-    { value: total ? total.toLocaleString() : '0', label: 'Total Issues' },
-    { value: resolved ? resolved.toLocaleString() : '0', label: 'Resolved Issues' },
-    { value: resolutionRate, label: 'Resolution Rate' },
-    { value: summary?.open ? summary.open.toLocaleString() : '0', label: 'Active Reports' },
-  ];
-
   return (
     <div className="min-h-screen bg-background">
       <Navbar />
@@ -126,24 +115,6 @@ const Index = () => {
                   </Button>
                 </Link>
               </div>
-
-              {}
-              <div className="flex items-center gap-6 pt-4">
-                <div className="flex -space-x-2">
-                  {[...Array(4)].map((_, i) => (
-                    <div 
-                      key={i} 
-                      className="w-10 h-10 rounded-full bg-muted border-2 border-background flex items-center justify-center text-xs font-semibold text-muted-foreground"
-                    >
-                      {String.fromCharCode(65 + i)}
-                    </div>
-                  ))}
-                </div>
-                <div>
-                  <div className="text-sm font-semibold text-foreground">10,000+ Active Users</div>
-                  <div className="text-xs text-muted-foreground">Trusted by citizens & authorities</div>
-                </div>
-              </div>
             </div>
 
             {}
@@ -183,22 +154,6 @@ const Index = () => {
                 </div>
               </div>
             </div>
-          </div>
-        </div>
-      </section>
-
-      {}
-      <section className="py-16 bg-primary/5">
-        <div className="container max-w-6xl mx-auto px-4">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
-            {stats.map((stat, i) => (
-              <div key={i} className="text-center">
-                <div className="text-3xl md:text-4xl font-heading font-bold text-primary mb-2">
-                  {stat.value}
-                </div>
-                <div className="text-sm text-muted-foreground">{stat.label}</div>
-              </div>
-            ))}
           </div>
         </div>
       </section>
