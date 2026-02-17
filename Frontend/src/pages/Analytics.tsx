@@ -103,7 +103,7 @@ export default function Analytics() {
           </Select>
         </div>
 
-        <div className="grid gap-4 md:grid-cols-4">
+        <div className="grid gap-4 md:grid-cols-3">
           <Card>
             <CardHeader className="pb-2">
               <CardTitle className="text-sm text-muted-foreground">Incidents</CardTitle>
@@ -118,15 +118,9 @@ export default function Analytics() {
           </Card>
           <Card>
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm text-muted-foreground">City Cleanliness Score</CardTitle>
+              <CardTitle className="text-sm text-muted-foreground">Incidents Resolved</CardTitle>
             </CardHeader>
-            <CardContent className="text-2xl font-semibold">{dashboard.cityCleanlinessScore}%</CardContent>
-          </Card>
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm text-muted-foreground">Safety Index</CardTitle>
-            </CardHeader>
-            <CardContent className="text-2xl font-semibold">{dashboard.safetyIndex}</CardContent>
+            <CardContent className="text-2xl font-semibold">{dashboard.incidents.resolved}</CardContent>
           </Card>
         </div>
 

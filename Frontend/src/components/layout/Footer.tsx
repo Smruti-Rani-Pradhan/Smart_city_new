@@ -96,13 +96,13 @@ export const Footer = () => {
               <li className="flex items-start gap-3">
                 <MapPin className="h-4 w-4 mt-1 text-primary-foreground/60" />
                 <span className="text-primary-foreground/70 text-sm">
-                  Smart City Office, Tech Park, India
+                  ITER, Bhubaneswar, Odisha
                 </span>
               </li>
               <li className="flex items-center gap-3">
                 <Mail className="h-4 w-4 text-primary-foreground/60" />
-                <a href="mailto:support@safelive.in" className="text-primary-foreground/70 hover:text-primary-foreground text-sm transition-colors">
-                  support@safelive.in
+                <a href="mailto:safelive.alerts@gmail.com" className="text-primary-foreground/70 hover:text-primary-foreground text-sm transition-colors">
+                  safelive.alerts@gmail.com
                 </a>
               </li>
               <li className="flex items-center gap-3">
