@@ -367,7 +367,18 @@ const OfficialDashboard = () => {
                   const isEditingAssignee = !!assigneeEditorOpen[ticket.id];
 
                   return (
-                    <div key={ticket.id} className="p-4 rounded-xl border border-border">
+                    <div key={ticket.id} className="p-4 rounded-xl border border-border space-y-3">
+                      {ticket.reopenWarning && !isHeadSupervisor && (
+                        <div className="flex items-start gap-2 rounded-md border border-warning/40 bg-warning/10 p-3 text-xs text-warning">
+                          <AlertCircle className="h-4 w-4 shrink-0" />
+                          <div>
+                            <p className="font-medium text-warning">
+                              {ticket.reopenWarning.supervisorName || 'Head Supervisor'} reopened this case
+                            </p>
+                            <p>{ticket.reopenWarning.message}</p>
+                          </div>
+                        </div>
+                      )}
                       <div className="flex items-start justify-between gap-3">
                         <div className="space-y-1 min-w-0">
                           <div className="flex items-center gap-2">
@@ -396,15 +407,21 @@ const OfficialDashboard = () => {
 
                       {isResolved ? (
                         <div className="mt-3 flex items-center justify-between gap-2 rounded-md border border-border p-2">
-                          <span className="text-sm text-muted-foreground">Resolved ticket. Use reopen if needed.</span>
-                          <Button
-                            variant="outline"
-                            onClick={() => handleStatus(ticket.id, 'open')}
-                            disabled={submittingStatusId === ticket.id}
-                          >
-                            <RotateCcw className="h-4 w-4 mr-1" />
-                            Reopen
-                          </Button>
+                          <span className="text-sm text-muted-foreground">
+                            {isHeadSupervisor
+                              ? 'Resolved ticket. Reopen to reassign or escalate.'
+                              : 'Resolved ticket. Awaiting supervisor review for any reopening.'}
+                          </span>
+                          {isHeadSupervisor && (
+                            <Button
+                              variant="outline"
+                              onClick={() => handleStatus(ticket.id, 'open')}
+                              disabled={submittingStatusId === ticket.id}
+                            >
+                              <RotateCcw className="h-4 w-4 mr-1" />
+                              Reopen
+                            </Button>
+                          )}
                         </div>
                       ) : (
                         <div className="grid lg:grid-cols-2 gap-3 mt-3">

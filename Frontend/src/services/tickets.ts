@@ -16,6 +16,18 @@ export interface Ticket {
   assigneeName?: string;
   assigneePhone?: string;
   assigneePhotoUrl?: string;
+  assigneeEmail?: string;
+  assigneeUserId?: string;
+  reopenedBy?: {
+    id?: string;
+    name?: string;
+    timestamp?: string;
+  };
+  reopenWarning?: {
+    message: string;
+    issuedAt: string;
+    supervisorName?: string;
+  };
   createdAt: string;
   updatedAt?: string;
 }
